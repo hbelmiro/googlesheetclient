@@ -22,9 +22,12 @@ import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.List;
 
-public class App {
+final class SheetsClient {
+
     private static final String APPLICATION_NAME = "Google Sheets API Java Quickstart";
+
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
+
     private static final String TOKENS_DIRECTORY_PATH = "tokens";
 
     /**
@@ -33,7 +36,12 @@ public class App {
      */
     private static final List<String> SCOPES =
             Collections.singletonList(SheetsScopes.SPREADSHEETS_READONLY);
-    private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
+
+    private final String credentialsFilePath; //"/credentials.json";
+
+    SheetsClient(String credentialsFilePath) {
+        this.credentialsFilePath = credentialsFilePath;
+    }
 
     /**
      * Creates an authorized Credential object.
@@ -42,12 +50,12 @@ public class App {
      * @return An authorized Credential object.
      * @throws IOException If the credentials.json file cannot be found.
      */
-    private static Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT)
+    private Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT)
             throws IOException {
         // Load client secrets.
-        InputStream in = App.class.getResourceAsStream(CREDENTIALS_FILE_PATH);
+        InputStream in = SheetsClient.class.getResourceAsStream(credentialsFilePath);
         if (in == null) {
-            throw new FileNotFoundException("Resource not found: " + CREDENTIALS_FILE_PATH);
+            throw new FileNotFoundException("Resource not found: " + credentialsFilePath);
         }
         GoogleClientSecrets clientSecrets =
                 GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
@@ -66,11 +74,11 @@ public class App {
      * Prints the names and majors of students in a sample spreadsheet:
      * https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
      */
-    public static void main(String... args) throws IOException, GeneralSecurityException {
+    public List<List<Object>> run() throws IOException, GeneralSecurityException {
         // Build a new authorized API client service.
         final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-        final String spreadsheetId = "1-IItJwcdydu6quQAjV9Qfbp_oBmC9nzxNlJMmAy1Dh8";
-        final String range = "Página1!A2:E";
+        final String spreadsheetId = "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms";
+        final String range = "Class Data!A2:F";
         Sheets service =
                 new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
                         .setApplicationName(APPLICATION_NAME)
@@ -79,15 +87,6 @@ public class App {
         ValueRange response = service.spreadsheets().values()
                 .get(spreadsheetId, range)
                 .execute();
-        List<List<Object>> values = response.getValues();
-        if (values == null || values.isEmpty()) {
-            System.out.println("No data found.");
-        } else {
-            System.out.println("Name, Major");
-            for (List row : values) {
-                // Print columns A and E, which correspond to indices 0 and 4.
-                System.out.printf("%s, %s\n", row.get(1), row.get(3));
-            }
-        }
+        return response.getValues();
     }
 }
